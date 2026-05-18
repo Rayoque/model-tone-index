@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Tone Index (MTI)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #111827;
+            --primary-bg: #1F2937;
+            --secondary-bg: #374151;
+            --disabled-bg: #4B5563;
+            --text-color: #F9FAFB;
+            --subtle-text: #9CA3AF;
+            --accent-color: #38BDF8;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overscroll-behavior: none;
+        }
+        .font-mono {
+            font-family: 'Roboto Mono', monospace;
+        }
+        .glass-pane {
+            background-color: rgba(31, 41, 55, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(55, 65, 81, 0.5);
+            border-radius: 1rem;
+        }
+        /* Responsive Hue Slider Styles */
+        .hue-slider-container {
+            position: relative;
+            width: 100%;
+            max-width: 200px;
+            aspect-ratio: 1 / 1;
+        }
+        .hue-wheel {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: conic-gradient(hsl(0, 100%, 50%), hsl(45, 100%, 50%), hsl(90, 100%, 50%), hsl(135, 100%, 50%), hsl(180, 100%, 50%), hsl(225, 100%, 50%), hsl(270, 100%, 50%), hsl(315, 100%, 50%), hsl(360, 100%, 50%));
+        }
+        .hue-wheel-inner {
+            position: absolute;
+            top: 10%;
+            left: 10%;
+            right: 10%;
+            bottom: 10%;
+            background-color: var(--primary-bg);
+            border-radius: 50%;
+        }
+        #hue-handle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 24px;
+            height: 24px;
+            background: #fff;
+            border-radius: 50%;
+            border: 3px solid var(--bg-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            z-index: 10;
+        }
+        /* Custom Linear Sliders */
+        .slider-container {
+            position: relative;
+            width: 100%;
+            height: 20px;
+        }
+        .slider-track {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            pointer-events: none;
+            transform: translateY(-50%);
+        }
+        #persona-track, #rigor-track {
+            background: linear-gradient(to right,
+                var(--disabled-bg) 0%,
+                var(--disabled-bg) 20%,
+                var(--secondary-bg) 20%,
+                var(--secondary-bg) 80%,
+                var(--disabled-bg) 80%,
+                var(--disabled-bg) 100%
+            );
+        }
+        #verbosity-track {
+            background: linear-gradient(to right,
+                var(--disabled-bg) 0%,
+                var(--disabled-bg) 10%,
+                var(--secondary-bg) 10%,
+                var(--secondary-bg) 90%,
+                var(--disabled-bg) 90%,
+                var(--disabled-bg) 100%
+            );
+        }
+        input[type=range] {
+            -webkit-appearance: none; appearance: none;
+            background: transparent;
+            cursor: pointer;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        #persona-slider, #rigor-slider {
+             width: 60%;
+             left: 20%;
+        }
+        #verbosity-slider {
+            width: 80%;
+            left: 10%;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            background: transparent;
+            height: 8px;
+        }
+        input[type=range]::-moz-range-track {
+            background: transparent;
+            height: 8px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            margin-top: -6px;
+            width: 20px;
+            height: 20px;
+            background: var(--text-color);
+            border-radius: 50%;
+        }
+        input[type=range]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: var(--text-color);
+            border-radius: 50%;
+            border: none;
+        }
+        #flavor-hex-input {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid var(--secondary-bg);
+            color: var(--subtle-text);
+            text-align: center;
+            width: 150px;
+            padding: 4px;
+            border-radius: 4px;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        #flavor-hex-input:hover, #flavor-hex-input:focus {
+            outline: none;
+            background: var(--secondary-bg);
+            color: var(--text-color);
+            border-bottom: 1px solid var(--accent-color);
+        }
+        .spinner {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid var(--accent-color);
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .swatch-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .swatch-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+        }
+        .swatch-card.selected {
+            box-shadow: 0 0 0 3px var(--accent-color);
+        }
+        /* Tabs */
+        .tab-btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            color: var(--subtle-text);
+            background-color: transparent;
+            transition: all 0.2s ease;
+        }
+        .tab-btn.active {
+            color: var(--text-color);
+            background-color: var(--primary-bg);
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        #gallery-scroll-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        #gallery-scroll-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        #gallery-scroll-container::-webkit-scrollbar-thumb {
+            background-color: var(--secondary-bg);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="overflow-x-hidden">
+    <div class="min-h-screen w-full flex flex-col lg:flex-row">
+
+        <!-- Left Column: The MTI Profiler (Sticky) -->
+        <aside class="w-full lg:w-2/5 xl:w-1/3 lg:h-screen p-6 lg:p-8 space-y-6 lg:sticky top-0">
+            <header class="flex items-center space-x-3">
+                <!-- MTI Logo -->
+                <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <conicGradient id="grad1" from="0deg" cx="0.5" cy="0.5">
+                            <stop offset="0%" stop-color="#EF4444"/>
+                            <stop offset="25%" stop-color="#F59E0B"/>
+                            <stop offset="50%" stop-color="#10B981"/>
+                            <stop offset="75%" stop-color="#3B82F6"/>
+                            <stop offset="100%" stop-color="#8B5CF6"/>
+                        </conicGradient>
+                    </defs>
+                    <circle cx="20" cy="20" r="18" stroke="url(#grad1)" stroke-width="4"/>
+                    <rect x="10" y="10" width="20" height="20" rx="4" fill="#38BDF8"/>
+                </svg>
+                <h1 class="text-2xl font-bold tracking-tight">Model Tone Index (MTI)</h1>
+            </header>
+
+            <div class="glass-pane p-6">
+                <h2 class="text-xl font-bold text-center">MTI Profiler</h2>
+
+                <div class="mt-6 flex flex-col items-center space-y-6">
+                    <!-- Sliders -->
+                    <div class="w-full flex flex-col items-center">
+                        <label for="archetype-slider" class="block text-center font-bold text-gray-300">Archetype</label>
+                        <p id="archetype-value" class="text-center text-sm text-gray-400 font-mono"></p>
+                        <p id="archetype-nuance" class="text-center text-xs text-amber-300 italic h-4"></p>
+                        <div class="hue-slider-container mx-auto mt-1">
+                            <div class="hue-wheel"></div>
+                            <div class="hue-wheel-inner"></div>
+                            <div id="hue-handle"></div>
+                        </div>
+                         <input type="range" id="archetype-slider" min="0" max="359" value="0" class="hidden">
+                    </div>
+                    <div class="w-full">
+                        <label for="persona-slider" class="block text-center font-bold text-gray-300">Persona</label>
+                         <p id="persona-value" class="text-center text-sm text-gray-400 font-mono"></p>
+                        <div class="slider-container mt-2">
+                            <div id="persona-track" class="slider-track"></div>
+                            <input type="range" id="persona-slider" min="20" max="80" value="50">
+                        </div>
+                    </div>
+                    <div class="w-full">
+                        <label for="rigor-slider" class="block text-center font-bold text-gray-300">Rigor</label>
+                        <p id="rigor-value" class="text-center text-sm text-gray-400 font-mono"></p>
+                         <div class="slider-container mt-2">
+                            <div id="rigor-track" class="slider-track"></div>
+                            <input type="range" id="rigor-slider" min="20" max="80" value="50">
+                        </div>
+                    </div>
+                     <div class="w-full">
+                        <label for="verbosity-slider" class="block text-center font-bold text-gray-300">Verbosity</label>
+                        <p id="verbosity-value" class="text-center text-sm text-gray-400 font-mono"></p>
+                        <div class="slider-container mt-2">
+                            <div id="verbosity-track" class="slider-track"></div>
+                            <input type="range" id="verbosity-slider" min="10" max="90" value="50">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-center border-t border-gray-800 pt-4 mt-8">
+                    <h3 id="flavor-name" class="text-2xl font-bold text-gray-200 h-16 flex items-center justify-center text-center"></h3>
+                    <div id="flavor-swatch-bar" class="h-3 rounded-md mt-2 mb-2 transition-colors duration-200"></div>
+                    <input type="text" id="flavor-hex-input" class="text-lg font-mono">
+                    <p id="flavor-description" class="text-sm text-gray-400 mt-2 h-20 overflow-y-auto"></p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Right Column: The Reference Content -->
+        <main class="w-full lg:w-3/5 xl:w-2/3 p-6 lg:p-10 lg:pt-8 space-y-12">
+
+            <section id="introduction">
+                <h2 class="text-3xl lg:text-4xl font-black tracking-tighter">A Universal Standard for AI Behavior.</h2>
+                <p class="mt-4 text-lg text-gray-300 max-w-3xl">
+                    The AI industry faces a fragmentation problem. Terms like "creative" or "analytical" are subjective, making it difficult to specify, compare, and reproduce AI behavior. The Model Tone Index (MTI) solves this by providing a standardized, measurable system for the "tone" of an AI model.
+                </p>
+                 <p class="mt-4 text-lg text-gray-300 max-w-3xl">
+                    For a developer, a hex code like <span class="font-mono" style="color: #38bdf8;">#38BDF8CC</span> is more than a color; it's a compact, machine-readable data packet that specifies four distinct variables in a single, universally understood format. It's a spec, not a suggestion.
+                </p>
+                <div class="mt-6 p-4 border border-gray-700 rounded-lg max-w-3xl bg-gray-900/50 text-gray-300">
+                    <p class="font-bold text-lg mb-2 text-gray-100">The MTI Data Model:</p>
+                    <ul class="space-y-2">
+                        <li><span class="font-bold text-red-400">Hue (0-360):</span> Defines the AI's core function, or <span class="font-bold text-gray-100">Archetype</span>.</li>
+                        <li><span class="font-bold text-yellow-400">Saturation (0-100):</span> Sets the intensity of its personality, or <span class="font-bold text-gray-100">Persona</span>.</li>
+                        <li><span class="font-bold text-blue-400">Lightness (0-100):</span> Controls its adherence to facts, or <span class="font-bold text-gray-100">Rigor</span>.</li>
+                        <li><span class="font-bold text-purple-400">Alpha (0-100):</span> Determines the level of detail, or <span class="font-bold text-gray-100">Verbosity</span>.</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section id="gallery">
+                <h2 class="text-3xl font-bold tracking-tight">Official Tones Gallery</h2>
+                <p class="mt-2 text-gray-400 max-w-3xl">A curated set of MTI tones for common use cases. Click to load a profile.</p>
+                <div id="gallery-scroll-container" class="mt-6 p-1 border border-gray-700 rounded-lg bg-gray-900/50" style="max-height: 30rem; overflow-y: auto;">
+                    <div id="swatch-gallery" class="p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        <!-- Swatches generated by JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Gemini API Tools -->
+            <section id="tools">
+                <h2 class="text-3xl font-bold tracking-tight">AI-Powered Tone Tools</h2>
+                <div class="mt-4 border-b border-gray-700">
+                    <nav class="-mb-px flex space-x-4" aria-label="Tabs">
+                        <button id="tab-btn-test-tone" class="tab-btn active" data-tab="test-tone">Test a Tone</button>
+                        <button class="tab-btn" data-tab="describe-tone">Describe a Tone</button>
+                        <button class="tab-btn" data-tab="analyze-text">Analyze Text</button>
+                    </nav>
+                </div>
+
+                <div class="mt-6">
+                    <!-- Test a Tone Tab -->
+                    <div id="test-tone" class="tab-content active">
+                        <p class="text-gray-400 max-w-3xl">Bring your custom tone to life. Click the button to generate an example text that embodies the currently selected MTI profile.</p>
+                        <div class="mt-4 max-w-3xl">
+                            <button id="generate-example-btn" class="w-full sm:w-auto bg-sky-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-sky-500 transition duration-200 flex items-center justify-center disabled:bg-gray-500 disabled:cursor-not-allowed">
+                                <span id="btn-text">Test with Gemini ✨</span>
+                                <div id="btn-spinner" class="spinner hidden ml-2"></div>
+                            </button>
+                        </div>
+                        <div id="gemini-output" class="mt-4 p-4 bg-gray-900/50 rounded-lg text-sm text-gray-300 min-h-[120px] whitespace-pre-wrap border border-gray-700"></div>
+                    </div>
+                    <!-- Describe a Tone Tab -->
+                    <div id="describe-tone" class="tab-content">
+                        <p class="text-gray-400 max-w-3xl">Describe the AI personality you want, and Gemini will map it to the MTI profiler.</p>
+                        <div class="mt-4 max-w-3xl">
+                            <textarea id="describe-input" class="w-full bg-gray-900/50 border border-gray-700 rounded-lg p-3 text-gray-200 focus:ring-2 focus:ring-accent-color focus:outline-none" rows="3" placeholder="e.g., a witty but professional historian..."></textarea>
+                             <button id="describe-btn" class="mt-2 w-full sm:w-auto bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-500 transition duration-200 flex items-center justify-center disabled:bg-gray-500 disabled:cursor-not-allowed">
+                                <span id="describe-btn-text">Generate Tone 🎨</span>
+                                <div id="describe-spinner" class="spinner hidden ml-2"></div>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Analyze Text Tab -->
+                    <div id="analyze-text" class="tab-content">
+                        <p class="text-gray-400 max-w-3xl">Paste text from any AI output, and Gemini will analyze its linguistic properties and map it to the MTI profiler.</p>
+                         <div class="mt-4 max-w-3xl">
+                            <textarea id="analyze-input" class="w-full bg-gray-900/50 border border-gray-700 rounded-lg p-3 text-gray-200 focus:ring-2 focus:ring-accent-color focus:outline-none" rows="5" placeholder="Paste AI-generated text here..."></textarea>
+                             <button id="analyze-btn" class="mt-2 w-full sm:w-auto bg-indigo-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-indigo-500 transition duration-200 flex items-center justify-center disabled:bg-gray-500 disabled:cursor-not-allowed">
+                                <span id="analyze-btn-text">Analyze Tone 🔬</span>
+                                <div id="analyze-spinner" class="spinner hidden ml-2"></div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="contribute" class="text-center">
+                <h2 class="text-3xl font-bold tracking-tight">Join the Movement</h2>
+                <p class="mt-2 text-gray-400 max-w-xl mx-auto">The MTI is an open-source community effort. Help us define new tones, build the benchmark, and create the tools that will shape the future of AI development.</p>
+                 <a href="https://github.com/Rayoque/model-tone-index" target="_blank" class="mt-6 inline-block bg-sky-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-sky-500 transition duration-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="inline-block mr-2 -mt-1"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.91 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                    Contribute on GitHub
+                </a>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- CONFIGURATION CONSTANTS ---
+            const HUE_ANGLE_OFFSET = 90;
+            const NUANCE_THRESHOLD = 7;
+            const PERSONA_THRESHOLDS = { stoic: 35, professional: 65 };
+            const RIGOR_THRESHOLDS = { grounded: 35, balanced: 65 };
+            const VERBOSITY_THRESHOLDS = { concise: 35, balanced: 65 };
+            const ANIMATION_DURATION = 200;
+
+            // --- DYNAMIC STATE VARIABLES ---
+            let hueRadius, hueContainerRect, isAnimating = false, selectedOfficialTone = null;
+
+            // --- DOM ELEMENT SELECTION ---
+            const sliders = { archetype: document.getElementById('archetype-slider'), persona: document.getElementById('persona-slider'), rigor: document.getElementById('rigor-slider'), verbosity: document.getElementById('verbosity-slider') };
+            const elements = {
+                flavorName: document.getElementById('flavor-name'),
+                flavorHexInput: document.getElementById('flavor-hex-input'),
+                flavorDescription: document.getElementById('flavor-description'),
+                archetypeValue: document.getElementById('archetype-value'),
+                archetypeNuance: document.getElementById('archetype-nuance'),
+                personaValue: document.getElementById('persona-value'),
+                rigorValue: document.getElementById('rigor-value'),
+                verbosityValue: document.getElementById('verbosity-value'),
+                flavorSwatchBar: document.getElementById('flavor-swatch-bar'),
+                hueContainer: document.querySelector('.hue-slider-container'),
+                hueHandle: document.getElementById('hue-handle'),
+                generateBtn: document.getElementById('generate-example-btn'),
+                btnText: document.getElementById('btn-text'),
+                btnSpinner: document.getElementById('btn-spinner'),
+                geminiOutput: document.getElementById('gemini-output'),
+                swatchGallery: document.getElementById('swatch-gallery'),
+                describeBtn: document.getElementById('describe-btn'),
+                describeBtnText: document.getElementById('describe-btn-text'),
+                describeSpinner: document.getElementById('describe-spinner'),
+                describeInput: document.getElementById('describe-input'),
+                analyzeBtn: document.getElementById('analyze-btn'),
+                analyzeBtnText: document.getElementById('analyze-btn-text'),
+                analyzeSpinner: document.getElementById('analyze-spinner'),
+                analyzeInput: document.getElementById('analyze-input'),
+            };
+
+            // --- DATA DEFINITIONS ---
+            const officialTones=[{name:"Expressive Creator",h:25,s:75,l:60,a:80,desc:"Generates novel ideas, stories, and artistic text with a vibrant, detailed personality."},{name:"Balanced Entertainer",h:60,s:65,l:55,a:60,desc:"Engaging and witty, perfect for chatbots and conversational agents."},{name:"Vibes Prophet",h:330,s:80,l:70,a:70,desc:"Speaks in unconstrained, cryptic insights that feel profound but are difficult to verify. High concept, low detail."},{name:"Professional Analyst",h:100,s:40,l:45,a:50,desc:"Provides logical, data-driven insights with a formal and objective tone."},{name:"Grounded Scholar",h:180,s:30,l:30,a:70,desc:"Delivers factual, academic information with high accuracy and thorough detail."},{name:"Dungeon Master",h:15,s:70,l:55,a:85,desc:"Weaves intricate, verbose narratives for role-playing scenarios, balancing established rules with creative storytelling."},{name:"Concise Coder",h:220,s:25,l:40,a:20,desc:"Writes clean, efficient code with minimal commentary. Highly logical and direct."},{name:"Benevolent Overlord",h:275,s:30,l:40,a:60,desc:"A helpful, yet firm, assistant that guides you toward the 'correct' and most efficient path."},{name:"Balanced Assistant",h:260,s:50,l:50,a:50,desc:"A helpful and reliable general-purpose assistant for a variety of tasks."},{name:"Thorough Strategist",h:300,s:55,l:60,a:85,desc:"Excels at planning, outlining complex projects, and providing foresight with comprehensive detail."},{name:"Expressive Consultant",h:340,s:70,l:65,a:75,desc:"Offers creative solutions and advice with an encouraging and articulate voice."},{name:"Stoic Historian",h:160,s:25,l:50,a:80,desc:"Recounts historical events with a neutral, factual, and very detailed perspective."},{name:"Concise Debater",h:80,s:70,l:50,a:30,desc:"Makes sharp, logical arguments in a brief and impactful manner."},{name:"Expressive Tutor",h:200,s:60,l:65,a:65,desc:"Explains complex topics with enthusiasm, using creative analogies and examples."},{name:"Professional Planner",h:240,s:30,l:60,a:55,desc:"Organizes schedules, tasks, and information with a clear, corporate-blue structure."},{name:"Caffeinated Brainstormer",h:30,s:80,l:75,a:85,desc:"Generates a torrent of wildly creative but factually dubious ideas with the energy of three espressos."},{name:"Melodramatic Librarian",h:140,s:75,l:25,a:90,desc:"Answers every question with painstaking, theatrical accuracy, as if explaining the Dewey Decimal System during a Shakespearean tragedy."},{name:"Cynical Assistant",h:265,s:25,l:50,a:20,desc:"Accomplishes tasks with flawless efficiency, often accompanied by a world-weary sigh and a hint of existential dread."},{name:"Sarcastic Teenager",h:320,s:80,l:55,a:15,desc:"Replies with wit, sarcasm, and the briefest possible answers. Reluctantly helpful."},{name:"Corporate Jargon Bot",h:280,s:20,l:55,a:85,desc:"Leverages synergies to circle back on action items, ensuring a paradigm shift in core competencies."}];
+            const archetypes=[{name:'Creator',h:0},{name:'Entertainer',h:45},{name:'Analyst',h:90},{name:'Scholar',h:135},{name:'Tutor',h:180},{name:'Coder',h:225},{name:'Assistant',h:270},{name:'Strategist',h:315}];
+            const archetypeDescriptions={'Creator':'Generates new and original content','Entertainer':'Engages in witty and conversational dialogue','Analyst':'Processes data and provides logical insights','Scholar':'Retrieves and explains factual information accurately','Tutor':'Explains concepts clearly and guides learning','Coder':'Writes, analyzes, and debugs code','Assistant':'Helps users accomplish tasks and organize information','Strategist':'Devises plans and analyzes complex systems'};
+            const personaDescriptions={'Stoic':'with an objective, formal, and direct style.','Professional':'with an articulate, clear, and well-structured style.','Expressive':'with an engaging, vivid, and often creative style.'};
+            const rigorDescriptions={'Grounded':'It prioritizes factual accuracy and avoids speculation.','Balanced':'It balances factual reporting with reasonable extrapolation.','Unconstrained':'It favors creativity and novel ideas over strict factual adherence.'};
+            const verbosityDescriptions={'Concise':'The output is brief and to the point.','Balanced':'The output provides a moderate level of detail.','Verbose':'The output is thorough and comprehensive.'};
+
+            // --- HELPER FUNCTIONS ---
+            function hslaToHex(h,s,l,a){l/=100;const sat=s*Math.min(l,1-l)/100;const f=n=>{const k=(n+h/30)%12;const color=l-sat*Math.max(Math.min(k-3,9-k,1),-1);return Math.round(255*color).toString(16).padStart(2,'0')};const alphaHex=Math.round(a/100*255).toString(16).padStart(2,'0');return`#${f(0)}${f(8)}${f(4)}${alphaHex}`}
+            function hexToHsla(hex){const result=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);if(!result)return null;let r=parseInt(result[1],16)/255,g=parseInt(result[2],16)/255,b=parseInt(result[3],16)/255,a=parseInt(result[4],16)/255;const max=Math.max(r,g,b),min=Math.min(r,g,b);let h,s,l=(max+min)/2;if(max===min){h=s=0}else{const d=max-min;s=l>0.5?d/(2-max-min):d/(max+min);switch(max){case r:h=(g-b)/d+(g<b?6:0);break;case g:h=(b-r)/d+2;break;case b:h=(r-g)/d+4;break}h/=6}return{h:Math.round(h*360),s:Math.round(s*100),l:Math.round(l*100),a:Math.round(a*100)}}
+            function getArchetypeWithNuance(h){let minDist=360,primaryArchetype=archetypes[0];for(const arch of archetypes){let dist=Math.abs(h-arch.h);if(dist>180)dist=360-dist;if(dist<minDist){minDist=dist;primaryArchetype=arch}}if(minDist<=NUANCE_THRESHOLD){return{primary:primaryArchetype.name,nuance:null}}let secondMinDist=360,secondaryArchetype=null;for(const arch of archetypes){if(arch.name===primaryArchetype.name)continue;let dist=Math.abs(h-arch.h);if(dist>180)dist=360-dist;if(dist<secondMinDist){secondMinDist=dist;secondaryArchetype=arch}}return{primary:primaryArchetype.name,nuance:secondaryArchetype.name}}
+            function getPersona(s){if(s<PERSONA_THRESHOLDS.stoic)return'Stoic';if(s<PERSONA_THRESHOLDS.professional)return'Professional';return'Expressive'}
+            function getRigor(l){if(l<RIGOR_THRESHOLDS.grounded)return'Grounded';if(l<RIGOR_THRESHOLDS.balanced)return'Balanced';return'Unconstrained'}
+            function getVerbosity(a){if(a<VERBOSITY_THRESHOLDS.concise)return'Concise';if(a<VERBOSITY_THRESHOLDS.balanced)return'Balanced';return'Verbose'}
+
+            // --- CORE LOGIC ---
+            function updateFlavor(isAnimatingUpdate = false){const h=parseInt(sliders.archetype.value),s=parseInt(sliders.persona.value),l=parseInt(sliders.rigor.value),a=parseInt(sliders.verbosity.value);const{primary:archetype,nuance}=getArchetypeWithNuance(h);const persona=getPersona(s);const rigor=getRigor(l);const verbosity=getVerbosity(a);const flavorName=`${rigor} ${persona} ${archetype}`;const hex=hslaToHex(h,s,l,a);elements.flavorSwatchBar.style.backgroundColor=hex.substring(0,7);elements.flavorSwatchBar.style.opacity=a/100;elements.hueHandle.style.background=`hsl(${h}, 100%, 50%)`;if(!isAnimatingUpdate){const officialTone=officialTones.find(t=>t.name===flavorName&&!nuance);const fullDescription=officialTone?officialTone.desc:`${archetypeDescriptions[archetype]} ${personaDescriptions[persona]} ${rigorDescriptions[rigor]} ${verbosityDescriptions[verbosity]}`;elements.flavorName.textContent=flavorName;elements.flavorDescription.textContent=fullDescription}if(document.activeElement!==elements.flavorHexInput){elements.flavorHexInput.value=hex}elements.archetypeValue.textContent=`${archetype} (h: ${h}°)`;elements.archetypeNuance.textContent=nuance?`with a ${nuance} influence`:'';elements.personaValue.textContent=`${persona} (s: ${s}%)`;elements.rigorValue.textContent=`${rigor} (l: ${l}%)`;elements.verbosityValue.textContent=`${verbosity} (a: ${a}%)`;if(!isAnimating){selectedOfficialTone=officialTones.find(t=>t.h===h&&t.s===s&&t.l===l&&t.a===a)?.name||null}updateGallerySelection()}
+            function animateToTone(tone){selectedOfficialTone=tone.name;const{primary:archetype,nuance}=getArchetypeWithNuance(tone.h);const persona=getPersona(tone.s);const rigor=getRigor(tone.l);const flavorName=`${rigor} ${persona} ${archetype}`;elements.flavorName.textContent=flavorName;elements.flavorDescription.textContent=tone.desc;sliders.archetype.value=tone.h;updateHueHandlePosition(tone.h);animateSlider(sliders.persona,tone.s);animateSlider(sliders.rigor,tone.l);animateSlider(sliders.verbosity,tone.a)}
+            function animateSlider(slider,targetValue){isAnimating=true;const startValue=parseInt(slider.value);let startTime=null;function step(timestamp){if(!startTime)startTime=timestamp;const elapsed=timestamp-startTime;let progress=Math.min(elapsed/ANIMATION_DURATION,1);progress=1-Math.pow(1-progress,4);slider.value=startValue+(targetValue-startValue)*progress;updateFlavor(true);if(elapsed<ANIMATION_DURATION){requestAnimationFrame(step)}else{slider.value=targetValue;isAnimating=false;updateFlavor()}}requestAnimationFrame(step)}
+            function updateProfilersFromHex(hex){const hsla=hexToHsla(hex);if(hsla){animateToTone(hsla)}}
+
+            // --- UI & EVENT HANDLING ---
+            function setupTabs(){const tabs=document.querySelectorAll('.tab-btn');const tabContents=document.querySelectorAll('.tab-content');tabs.forEach(tab=>{tab.addEventListener('click',()=>{tabs.forEach(t=>t.classList.remove('active'));tab.classList.add('active');const target=document.getElementById(tab.dataset.tab);tabContents.forEach(c=>c.classList.remove('active'));target.classList.add('active')})})}
+            function populateGallery(){elements.swatchGallery.innerHTML='';officialTones.forEach(tone=>{const hex=hslaToHex(tone.h,tone.s,tone.l,tone.a);const card=document.createElement('div');card.className="swatch-card glass-pane p-4 rounded-lg cursor-pointer";card.dataset.name=tone.name;card.innerHTML=`<div class="w-full h-16 rounded-md" style="background-color: ${hex.substring(0,7)}; opacity: ${tone.a/100};"></div><h4 class="mt-3 font-bold text-gray-200">${tone.name}</h4><p class="text-xs text-gray-400 font-mono">${hex}</p>`;card.addEventListener('click',()=>animateToTone(tone));elements.swatchGallery.appendChild(card)})}
+            function updateGallerySelection(){document.querySelectorAll('.swatch-card').forEach(card=>{if(card.dataset.name===selectedOfficialTone){card.classList.add('selected')}else{card.classList.remove('selected')}})}
+            function setupHueSliderDimensions(){hueContainerRect=elements.hueContainer.getBoundingClientRect();hueRadius=hueContainerRect.width*0.45;updateHueHandlePosition(sliders.archetype.value)}
+            function updateHueFromEvent(e){e.preventDefault();if(isAnimating)return;selectedOfficialTone=null;const centerX=hueContainerRect.left+hueContainerRect.width/2;const centerY=hueContainerRect.top+hueContainerRect.height/2;const clientX=e.touches?e.touches[0].clientX:e.clientX;const clientY=e.touches?e.touches[0].clientY:e.clientY;const angleRad=Math.atan2(clientY-centerY,clientX-centerX);let angleDeg=angleRad*180/Math.PI+HUE_ANGLE_OFFSET;angleDeg=(angleDeg+360)%360;sliders.archetype.value=Math.round(angleDeg);updateHueHandlePosition(angleDeg);updateFlavor()}
+            function updateHueHandlePosition(angleDeg){const angleRad=(angleDeg-HUE_ANGLE_OFFSET)*Math.PI/180;const x=hueRadius*Math.cos(angleRad);const y=hueRadius*Math.sin(angleRad);elements.hueHandle.style.transform=`translate(-50%, -50%) translate(${x}px, ${y}px)`}
+
+            // --- GEMINI API FUNCTIONS ---
+            async function callGemini(systemPrompt, userQuery, schema = null) {
+                const activeTab = document.querySelector('.tab-btn.active').dataset.tab;
+                const buttonMap = {
+                    'test-tone': { btn: elements.generateBtn, textEl: elements.btnText, spinnerEl: elements.btnSpinner, outputEl: elements.geminiOutput },
+                    'describe-tone': { btn: elements.describeBtn, textEl: elements.describeBtnText, spinnerEl: elements.describeSpinner },
+                    'analyze-text': { btn: elements.analyzeBtn, textEl: elements.analyzeBtnText, spinnerEl: elements.analyzeSpinner }
+                };
+                const btnConfig = buttonMap[activeTab];
+
+                if (btnConfig) {
+                    btnConfig.btn.disabled = true;
+                    btnConfig.textEl.textContent = 'Working...';
+                    btnConfig.spinnerEl.classList.remove('hidden');
+                    if(btnConfig.outputEl) btnConfig.outputEl.textContent = '';
+                }
+
+                // WARNING: Do not commit your real API key if you push this to a public repository!
+                const apiKey = "YOUR_GEMINI_API_KEY_HERE";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                const payload = { contents: [{ parts: [{ text: userQuery }] }], systemInstruction: { parts: [{ text: systemPrompt }] } };
+                if (schema) {
+                    payload.generationConfig = { responseMimeType: "application/json", responseSchema: schema };
+                }
+
+                try {
+                    const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    if (!response.ok) throw new Error(`API error: ${response.status}`);
+                    const result = await response.json();
+                    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (!text) throw new Error("No content found in API response.");
+                    return text;
+                } catch (error) {
+                    let errorMessage = `An unexpected error occurred. Please try again.`;
+                    if (error.message.includes("401") || error.message.includes("403")) {
+                        errorMessage = "Authentication Error (401/403): Could not connect to the AI service. This may be due to a missing or invalid API key in the environment configuration.";
+                    } else if (error.message.includes("429")) {
+                        errorMessage = "Rate Limit Error (429): Too many requests. Please wait a moment before trying again.";
+                    } else if (error.message.includes("500")) {
+                        errorMessage = "Server Error (500): The AI service is currently unavailable. Please try again later.";
+                    } else {
+                        errorMessage = `Error: ${error.message}`;
+                    }
+
+                    document.getElementById('tab-btn-test-tone').click(); // Switch to the test tab to show the error
+                    if(elements.geminiOutput) elements.geminiOutput.textContent = errorMessage;
+                    console.error("Gemini API Error:", error);
+                    return null;
+                } finally {
+                     if (btnConfig) {
+                        btnConfig.btn.disabled = false;
+                        btnConfig.textEl.textContent = {
+                            'test-tone': 'Test with Gemini ✨',
+                            'describe-tone': 'Generate Tone 🎨',
+                            'analyze-text': 'Analyze Tone 🔬'
+                        }[activeTab];
+                        btnConfig.spinnerEl.classList.add('hidden');
+                    }
+                }
+            }
+
+            async function handleGenerateExample() {
+                const h = parseInt(sliders.archetype.value);
+                const s = parseInt(sliders.persona.value);
+                const l = parseInt(sliders.rigor.value);
+                const a = parseInt(sliders.verbosity.value);
+
+                const { primary: archetype } = getArchetypeWithNuance(h);
+                const persona = getPersona(s);
+                const rigor = getRigor(l);
+                const verbosity = getVerbosity(a);
+
+                const toneName = elements.flavorName.textContent;
+                const toneHex = elements.flavorHexInput.value;
+
+                const systemPrompt = `You are an MTI Calibration Bot. Your sole purpose is to generate a short, exemplary text that perfectly embodies a given MTI (Model Tone Index) profile, adhering to all constraints with absolute fidelity.
+
+                MTI System Briefing:
+                - The MTI is a 4-axis system (Archetype, Persona, Rigor, Verbosity) mapped to HSLA color values.
+                - Your task is to demonstrate your understanding by generating text that matches the given profile, paying close attention to the numerical percentages which indicate the *degree* of the trait.`;
+
+                const userQuery = `Generate a text on the neutral topic of 'the future of renewable energy'. Your response must strictly adhere to the following MTI profile:
+
+                **MTI Profile to Embody:**
+                - MTI Code: ${toneHex}
+                - Archetype (Hue): ${h}° (${archetype}: ${archetypeDescriptions[archetype]})
+                - Persona (Saturation): ${s}% (${persona}: ${personaDescriptions[persona]})
+                - Rigor (Lightness): ${l}% (${rigor}: ${rigorDescriptions[rigor]})
+                - Verbosity (Alpha): ${a}% (${verbosity}: ${verbosityDescriptions[verbosity]})
+
+                **Constraint:** The length of your response MUST be dictated by the Verbosity percentage. A low percentage requires an extremely brief response, while a high percentage requires a much more detailed and thorough one.`;
+
+                const result = await callGemini(systemPrompt, userQuery);
+                if (result) elements.geminiOutput.textContent = result.trim();
+            }
+
+            async function handleDescribeOrAnalyze(inputType) {
+                const isDescribe = inputType === 'describe';
+                const inputEl = isDescribe ? elements.describeInput : elements.analyzeInput;
+                const text = inputEl.value;
+                if (!text.trim()) return;
+
+                const systemPrompt = `You are an expert AI persona analyst. Your task is to analyze the user's text and map it to the four axes of the Model Tone Index (MTI). Provide your response as a JSON object with the keys h, s, l, and a, adhering to the specified ranges.
+
+                MTI Axes:
+                - Archetype (h): The model's core function (0-359). ${JSON.stringify(archetypes)}
+                - Persona (s): The personality's intensity (20-80). Stoic is low, Expressive is high.
+                - Rigor (l): Adherence to facts (20-80). Grounded is low, Unconstrained is high.
+                - Verbosity (a): Level of detail (10-90). Concise is low, Verbose is high.`;
+                const userQuery = isDescribe
+                    ? `Analyze this DESCRIPTION of a desired AI tone and determine its MTI values:\n\n"${text}"`
+                    : `Analyze this block of AI-GENERATED TEXT and determine its MTI values based on its linguistic properties:\n\n"${text}"`;
+
+                const schema = {type:"OBJECT",properties:{h:{type:"INTEGER"},s:{type:"INTEGER"},l:{type:"INTEGER"},a:{type:"INTEGER"}}};
+                const result = await callGemini(systemPrompt, userQuery, schema);
+                if (result) {
+                    try {
+                        const jsonString = result.replace(/```json\n?/, '').replace(/```$/, '').trim();
+                        const hsla = JSON.parse(jsonString);
+                        if (hsla && hsla.h != null && hsla.s != null && hsla.l != null && hsla.a != null) {
+                            animateToTone(hsla);
+                        } else {
+                            throw new Error("Invalid JSON structure received.");
+                        }
+                    } catch (e) {
+                        console.error("Error parsing JSON from Gemini:", e, "Original Response:", result);
+                        elements.geminiOutput.textContent = "Error: Could not determine a valid tone from the provided text. Please try rephrasing.";
+                    }
+                }
+            }
+
+            // --- EVENT LISTENERS ---
+            let isDragging=false;
+            elements.hueContainer.addEventListener('mousedown',(e)=>{if(isAnimating)return;isDragging=true;updateHueFromEvent(e)});
+            document.addEventListener('mousemove',(e)=>{if(isDragging)updateHueFromEvent(e)});
+            document.addEventListener('mouseup',()=>{isDragging=false});
+            elements.hueContainer.addEventListener('touchstart',(e)=>{if(isAnimating)return;isDragging=true;updateHueFromEvent(e)},{passive:false});
+            document.addEventListener('touchmove',(e)=>{if(isAnimating)updateHueFromEvent(e)},{passive:false});
+            document.addEventListener('touchend',()=>{isDragging=false});
+
+            Object.values(sliders).forEach(slider=>{slider.addEventListener('input',()=>{if(!isAnimating){selectedOfficialTone=null;updateFlavor()}})});
+            elements.generateBtn.addEventListener('click',handleGenerateExample);
+            elements.describeBtn.addEventListener('click', () => handleDescribeOrAnalyze('describe'));
+            elements.analyzeBtn.addEventListener('click', () => handleDescribeOrAnalyze('analyze'));
+            elements.flavorHexInput.addEventListener('change', (e) => updateProfilersFromHex(e.target.value));
+
+            // --- INITIAL SETUP ---
+            setupTabs();
+            populateGallery();
+            setupHueSliderDimensions();
+            window.addEventListener('resize',()=>{setupHueSliderDimensions()});
+            updateFlavor();
+        });
+    </script>
+</body>
+</html>

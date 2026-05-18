@@ -1,0 +1,22 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Node (if you ever add tooling)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Env / secrets — DO NOT commit your Gemini API key
+.env
+.env.local
+*.key
+
+# Build output (if you ever add a bundler)
+dist/
+build/
